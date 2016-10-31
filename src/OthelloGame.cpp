@@ -8,6 +8,7 @@
 #include <fstream>
 #include <cerrno>
 
+#include <unistd.h>
 #include <time.h>
 #include <signal.h>
 #include <sys/types.h>
