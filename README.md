@@ -1,0 +1,2 @@
+# Othello-Bot
+Othello AI
