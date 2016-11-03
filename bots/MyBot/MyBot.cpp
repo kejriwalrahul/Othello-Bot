@@ -38,6 +38,7 @@ MyBot::MyBot( Turn turn )
 }
 
 #define ply_depth 5
+#define BOARD_SIZE 8
 
 int eval(OthelloBoard board, Move m, Turn turn) {
     board.makeMove(turn, m);
@@ -45,27 +46,6 @@ int eval(OthelloBoard board, Move m, Turn turn) {
         return board.getRedCount() - board.getBlackCount();
     else
         return board.getBlackCount() - board.getRedCount();
-}
-
-int eval(const OthelloBoard board, Turn turn){
-    float val = 0;
-    list<Move> moves= board.getValidMoves(turn);
-
-    for(Move move : moves) {
-        if(corner(move.x,move.y)) {
-            val += 2;
-        }
-        if(border(move.x, move.y)) {
-            val += .1;
-        }
-    }
-
-    if(turn == RED)
-        val += board.getRedCount() - board.getBlackCount();
-    else
-        val += board.getBlackCount() - board.getRedCount();
-
-    return (int) val;
 }
 
 bool corner(int x, int y) {
@@ -97,6 +77,29 @@ bool border(int x, int y) {
         }
     }
     return false;
+}
+
+int eval(const OthelloBoard board, Turn turn){
+    float val = 0;
+    list<Move> moves= board.getValidMoves(turn);
+    list<Move>::iterator it = moves.begin();
+    Move *move;
+    for(; it != moves.end(); it++) {
+        move = &(*it);
+        if(corner((*move).x,(*move).y)) {
+            val += 2;
+        }
+        if(border((*move).x, (*move).y)) {
+            val += .1;
+        }
+    }
+
+    if(turn == RED)
+        val += board.getRedCount() - board.getBlackCount();
+    else
+        val += board.getBlackCount() - board.getRedCount();
+
+    return (int) val;
 }
 
 int min(int a, int b){
