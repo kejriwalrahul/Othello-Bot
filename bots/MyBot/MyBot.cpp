@@ -21,12 +21,12 @@ class MyBot: public OthelloPlayer
         /**
          * Initialisation routines here
          * This could do anything from open up a cache of "best moves" to
-         * spawning a background processing thread. 
+         * spawning a background processing thread.
          */
         MyBot( Turn turn );
 
         /**
-         * Play something 
+         * Play something
          */
         virtual Move play( const OthelloBoard& board );
     private:
@@ -39,7 +39,7 @@ MyBot::MyBot( Turn turn )
 
 #define ply_depth 5
 
-int eval(OthelloBoard board, Move m, Turn turn){
+int eval(OthelloBoard board, Move m, Turn turn) {
     board.makeMove(turn, m);
     if(turn == RED)
         return board.getRedCount() - board.getBlackCount();
@@ -48,15 +48,60 @@ int eval(OthelloBoard board, Move m, Turn turn){
 }
 
 int eval(const OthelloBoard board, Turn turn){
+    float val = 0;
+    list<Move> moves= board.getValidMoves(turn);
+
+    for(Move move : moves) {
+        if(corner(move.x,move.y)) {
+            val += 2;
+        }
+        if(border(move.x, move.y)) {
+            val += .1;
+        }
+    }
+
     if(turn == RED)
-        return board.getRedCount() - board.getBlackCount();
+        val += board.getRedCount() - board.getBlackCount();
     else
-        return board.getBlackCount() - board.getRedCount();    
+        val += board.getBlackCount() - board.getRedCount();
+
+    return (int) val;
+}
+
+bool corner(int x, int y) {
+    if(x == 0 && y == 0) {
+        return true;
+    }
+    if(x == 0 && y == BOARD_SIZE-1) {
+        return true;
+    }
+    if(x == BOARD_SIZE-1 && y == 0) {
+        return true;
+    }
+    if(x == BOARD_SIZE-1 && y == BOARD_SIZE-1) {
+        return true;
+    }
+
+    return false;
+}
+
+bool border(int x, int y) {
+    if(y==0 || y==BOARD_SIZE-1) {
+        if(x>1 && x<BOARD_SIZE-1-1) {
+            return true;
+        }
+    }
+    if(x==0 || x==BOARD_SIZE-1) {
+        if(y>1 && y<BOARD_SIZE-1-1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 int min(int a, int b){
     if(a<b) return a;
-    else    return b;    
+    else    return b;
 }
 
 enum status{
@@ -103,7 +148,7 @@ Move MyBot::play( const OthelloBoard& board )
     open.push(new GameState(originalBoard, turn, 0, 0, INT_MAX, NULL, 0));
 
     while(true){
-        
+
         GameState *current = open.top();
         open.pop();
 
@@ -115,14 +160,14 @@ Move MyBot::play( const OthelloBoard& board )
             // Process the current state
             OthelloBoard &currBoard = current->board;
             Turn &currTurn = current->turn;
-               
+
             if(current->status == 0){
                 // Downward Pass
                 if(current->depth >= ply_depth){
                     GameState *next = current;
                     next->status = SOLVED;
                     next->h = min(current->h, eval(currBoard, currTurn));
-                    
+
                     open.push(next);
                     current->children.push_back(next);
                 }
@@ -131,7 +176,7 @@ Move MyBot::play( const OthelloBoard& board )
                     list<Move>   currMoves = newBoard.getValidMoves(currTurn);
                     newBoard.makeMove(current->turn, *(currMoves.begin()));
 
-                    GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, 0); 
+                    GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, 0);
                     open.push(next);
                     current->children.push_back(next);
                 }
@@ -142,10 +187,10 @@ Move MyBot::play( const OthelloBoard& board )
                         OthelloBoard newBoard = currBoard;
                         newBoard.makeMove(current->turn, *it);
 
-                        GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt); 
+                        GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt);
                         open.push(next);
-                        current->children.push_back(next);       
-                    }   
+                        current->children.push_back(next);
+                    }
                 }
             }
             else{
@@ -156,7 +201,7 @@ Move MyBot::play( const OthelloBoard& board )
                    next->h      = current->h;
 
                    open.push(next);
-                   recursiveRemoveFromPQ(next, open);
+//                   recursiveRemoveFromPQ(next, open);
                 }
                 else if(current->parent->children[current->parent->children.size()] == current){
                    GameState *next = current->parent;
@@ -170,7 +215,7 @@ Move MyBot::play( const OthelloBoard& board )
                    next->status = LIVE;
                    next->h      = current->h;
 
-                   open.push(next);                    
+                   open.push(next);
                 }
             }
         }
