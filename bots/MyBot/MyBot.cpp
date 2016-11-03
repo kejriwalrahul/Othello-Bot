@@ -10,6 +10,8 @@
 #include "OthelloPlayer.h"
 #include <cstdlib>
 #include <climits>
+#include <queue>
+#include <vector>
 using namespace std;
 using namespace Desdemona;
 
@@ -37,8 +39,8 @@ MyBot::MyBot( Turn turn )
 
 #define ply_depth 5
 
-int eval(const OthelloBoard board, Move m, Turn turn){
-    board.makeMove(m);
+int eval(OthelloBoard board, Move m, Turn turn){
+    board.makeMove(turn, m);
     if(turn == RED)
         return board.getRedCount() - board.getBlackCount();
     else
@@ -52,117 +54,146 @@ int eval(const OthelloBoard board, Turn turn){
         return board.getBlackCount() - board.getRedCount();    
 }
 
-class CompareDist{
-    public:
-        bool operator()(GameState n1, GameState n2) {
-            return n1.h - n2.h;
-        }
-};
-
 int min(int a, int b){
     if(a<b) return a;
     else    return b;    
 }
 
-int getOppTurn(Turn turn){
-    if(turn == RED) return BLACK;
-    else            return RED;
-}
-
 enum status{
     LIVE,
     SOLVED
-}
+};
 
 class GameState{
     public:
-        OthelloBoard board;
+        OthelloBoard &board;
         Turn turn;
         int depth;
         int status;
         int h;
+        GameState* parent;
+        int parentsChildIndex;
+        vector<GameState*> children;
 
-    GameState(OthelloBoard pboard, Turn pturn, int pdepth, int pstatus, int ph){
-        board  = pboard;
+    GameState(OthelloBoard &pboard, Turn pturn, int pdepth, int pstatus, int ph, GameState *pparent, int index): board(pboard)
+    {
         turn   = pturn;
         depth  = pdepth;
         status = pstatus;
         h      = ph;
+        parent = pparent;
+        parentsChildIndex = index;
     }
+};
 
-    GameState(OthelloBoard pboard, Turn pturn){
-        board  = pboard;
-        turn   = pturn;
-        depth  = -1;
-        status = -1;
-        h      = -1;
-    }
-}
+class CompareDist{
+    public:
+        bool operator()(GameState* n1, GameState* n2) {
+            return n1->h - n2->h;
+        }
+};
 
 typedef GameState TreeNode;
 
 Move MyBot::play( const OthelloBoard& board )
 {
-    list<Move> moves = board.getValidMoves( turn );
-    /**
-     *   int randNo = rand() % moves.size();
-     *   list<Move>::iterator it = moves.begin();
-     */
+    OthelloBoard originalBoard = board;
 
-    /**
-     * Tuple contains:
-     *      Board State
-     *      Turn - RED or BLACK
-     *      int  - depth below search node
-     *      int  - live=0 or solved=1
-     *      int  - eval fn val
-     */
-
-    priority_queue<GameState, vector<GameState>, CompareDist> open;
-    open.push(GameState(board, turn, 0, 0, INT_MAX));
+    priority_queue<GameState*, vector<GameState*>, CompareDist> open;
+    open.push(new GameState(originalBoard, turn, 0, 0, INT_MAX, NULL, 0));
 
     while(true){
         
-        GameState &current = open.pop();
-        
-        if(current.board == board && current.status == SOLVED) {
+        GameState *current = open.top();
+        open.pop();
+
+        if(current->depth == 0 && current->status == SOLVED) {
             // retrieve best move
+            // return best move
             break;
         } else {
             // Process the current state
-            OthelloBoard &currBoard = current.board;
-            Turn &currTurn = current.turn;
+            OthelloBoard &currBoard = current->board;
+            Turn &currTurn = current->turn;
                
-            if(current.status == 0){
+            if(current->status == 0){
                 // Downward Pass
-                if(current.depth >= ply_depth){
-                    open.push(GameState(currBoard, currTurn, current.depth, 1, min(current.h, eval(currBoard, currTurn)) ));
+                if(current->depth >= ply_depth){
+                    GameState *next = current;
+                    next->status = SOLVED;
+                    next->h = min(current->h, eval(currBoard, currTurn));
+                    
+                    open.push(next);
+                    current->children.push_back(next);
                 }
-                else if(current.turn != turn){
-                    list<Move> currMoves = currBoard.getValidMoves(currTurn);
-                    currBoard.makeMove(*(currMoves.begin()));
-                    open.push(GameState(currBoard, getOppTurn(currTurn), current.depth+1, 0, current.h));
+                else if(current->turn != turn){
+                    OthelloBoard newBoard  = currBoard;
+                    list<Move>   currMoves = newBoard.getValidMoves(currTurn);
+                    newBoard.makeMove(current->turn, *(currMoves.begin()));
+
+                    GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, 0); 
+                    open.push(next);
+                    current->children.push_back(next);
                 }
                 else{
                     list<Move> currMoves = currBoard.getValidMoves(currTurn);
-                    list<Move>::iterator it = moves.begin();
-                    for(; it != currMoves.end(); it++){
+                    list<Move>::iterator it = currMoves.begin();
+                    for(int cnt = 0; it != currMoves.end(); it++, cnt++){
                         OthelloBoard newBoard = currBoard;
-                        newBoard.makeMove(*it);
-                        open.push(GameState(newBoard, getOppTurn(currTurn), current.depth+1, 0, current.h));       
+                        newBoard.makeMove(current->turn, *it);
+
+                        GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt); 
+                        open.push(next);
+                        current->children.push_back(next);       
                     }   
                 }
             }
             else{
                 // Upward Pass
                 if(currTurn != turn){
-                    tuple<OthelloBoard, turn> = parent()
+                   GameState *next = current->parent;
+                   next->status = SOLVED;
+                   next->h      = current->h;
+
+                   open.push(next);
+                   recursiveRemoveFromPQ(next, open);
                 }
-                else if(){}
+                else if(current->parent->children[current->parent->children.size()] == current){
+                   GameState *next = current->parent;
+                   next->status = SOLVED;
+                   next->h      = current->h;
+
+                   open.push(next);
+                }
+                else{
+                   GameState *next = current->parent->children[current->parentsChildIndex + 1];
+                   next->status = LIVE;
+                   next->h      = current->h;
+
+                   open.push(next);                    
+                }
             }
         }
+
+        /*
+            PseudoCode:
+               if s == L
+                   if J is a terminal node
+                       (1.) add (J,S,min(h,value(J))) to OPEN
+                   else if J is a MIN node
+                       (2.) add (J.1,L,h) to OPEN
+                   else
+                       (3.) for j=1..number_of_children(J) add (J.j,L,h) to OPEN
+               else
+                   if J is a MIN node
+                       (4.) add (parent(J),S,h) to OPEN
+                            remove from OPEN all the states that are associated with the children of parent(J)
+                   else if is_last_child(J)   // if J is the last child of parent(J)
+                       (5.) add (parent(J),S,h) to OPEN
+                   else
+                       (6.) add (parent(J).(k+1),L,h) to OPEN   // add state associated with the next child of parent(J) to OPEN
+        */
     }
-    return *it;
 }
 
 // The following lines are _very_ important to create a bot module for Desdemona
