@@ -13,30 +13,6 @@
 using namespace std;
 using namespace Desdemona;
 
-#define ply_depth 5
-
-int eval(const OthelloBoard board, Move m, Turn turn){
-    board.makeMove(m);
-    if(turn == RED)
-        return board.getRedCount() - board.getBlackCount();
-    else
-        return board.getBlackCount() - board.getRedCount();
-}
-
-int eval(const OthelloBoard board, Turn turn){
-    if(turn == RED)
-        return board.getRedCount() - board.getBlackCount();
-    else
-        return board.getBlackCount() - board.getRedCount();    
-}
-
-class CompareDist{
-    public:
-        bool operator()(tuple<OthelloBoard,Turn,int, int,int> n1,tuple<OthelloBoard,Turn,int,int,int> n2) {
-            return get<3>(n1) - get<3>(n2);
-        }
-};
-
 class MyBot: public OthelloPlayer
 {
     public:
@@ -59,6 +35,30 @@ MyBot::MyBot( Turn turn )
 {
 }
 
+#define ply_depth 5
+
+int eval(const OthelloBoard board, Move m, Turn turn){
+    board.makeMove(m);
+    if(turn == RED)
+        return board.getRedCount() - board.getBlackCount();
+    else
+        return board.getBlackCount() - board.getRedCount();
+}
+
+int eval(const OthelloBoard board, Turn turn){
+    if(turn == RED)
+        return board.getRedCount() - board.getBlackCount();
+    else
+        return board.getBlackCount() - board.getRedCount();    
+}
+
+class CompareDist{
+    public:
+        bool operator()(GameState n1, GameState n2) {
+            return n1.h - n2.h;
+        }
+};
+
 int min(int a, int b){
     if(a<b) return a;
     else    return b;    
@@ -68,6 +68,38 @@ int getOppTurn(Turn turn){
     if(turn == RED) return BLACK;
     else            return RED;
 }
+
+enum status{
+    LIVE,
+    SOLVED
+}
+
+class GameState{
+    public:
+        OthelloBoard board;
+        Turn turn;
+        int depth;
+        int status;
+        int h;
+
+    GameState(OthelloBoard pboard, Turn pturn, int pdepth, int pstatus, int ph){
+        board  = pboard;
+        turn   = pturn;
+        depth  = pdepth;
+        status = pstatus;
+        h      = ph;
+    }
+
+    GameState(OthelloBoard pboard, Turn pturn){
+        board  = pboard;
+        turn   = pturn;
+        depth  = -1;
+        status = -1;
+        h      = -1;
+    }
+}
+
+typedef GameState TreeNode;
 
 Move MyBot::play( const OthelloBoard& board )
 {
@@ -86,30 +118,30 @@ Move MyBot::play( const OthelloBoard& board )
      *      int  - eval fn val
      */
 
-    priority_queue<tuple<OthelloBoard,Turn,int,int,int>, vector<tuple<OthelloBoard,Turn,int,int,int>>, CompareDist> open;
-    open.push(make_tuple(board, turn, 0, 0, INT_MAX));
+    priority_queue<GameState, vector<GameState>, CompareDist> open;
+    open.push(GameState(board, turn, 0, 0, INT_MAX));
 
     while(true){
         
-        tuple<OthelloBoard,Turn,int,int,int> current = open.pop();
+        GameState &current = open.pop();
         
-        if(get<0>(current) == board && get<3>(current) == 1) {
+        if(current.board == board && current.status == SOLVED) {
             // retrieve best move
             break;
         } else {
             // Process the current state
-            OthelloBoard &currBoard = get<0>(current);
-            Turn &currTurn = get<1>(current);
+            OthelloBoard &currBoard = current.board;
+            Turn &currTurn = current.turn;
                
-            if(get<3>(current) == 0){
+            if(current.status == 0){
                 // Downward Pass
-                if(get<2>(current) >= ply_depth){
-                    open.push(make_tuple(currBoard, currTurn, get<2>(current), 1, min(get<4>(current), eval(currBoard, currTurn)) ));
+                if(current.depth >= ply_depth){
+                    open.push(GameState(currBoard, currTurn, current.depth, 1, min(current.h, eval(currBoard, currTurn)) ));
                 }
-                else if(get<1>(current) != turn){
+                else if(current.turn != turn){
                     list<Move> currMoves = currBoard.getValidMoves(currTurn);
                     currBoard.makeMove(*(currMoves.begin()));
-                    open.push(make_tuple(currBoard, getOppTurn(currTurn), get<2>(current)+1, 0, get<4>(current)));
+                    open.push(GameState(currBoard, getOppTurn(currTurn), current.depth+1, 0, current.h));
                 }
                 else{
                     list<Move> currMoves = currBoard.getValidMoves(currTurn);
@@ -117,7 +149,7 @@ Move MyBot::play( const OthelloBoard& board )
                     for(; it != currMoves.end(); it++){
                         OthelloBoard newBoard = currBoard;
                         newBoard.makeMove(*it);
-                        open.push(make_tuple(newBoard, getOppTurn(currTurn), get<2>(current)+1, 0, get<4>(current)));       
+                        open.push(GameState(newBoard, getOppTurn(currTurn), current.depth+1, 0, current.h));       
                     }   
                 }
             }
