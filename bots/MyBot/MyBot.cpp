@@ -143,11 +143,34 @@ class CompareDist{
 
 typedef GameState TreeNode;
 
+template<typename T>
+class custom_priority_queue : public priority_queue<T, vector<T>>
+{
+  public:
+    bool remove(const T& value) {
+        auto it = find(this->c.begin(), this->c.end(), value);
+        if (it != this->c.end()) {
+            this->c.erase(it);
+            make_heap(this->c.begin(), this->c.end(), this->comp);
+            return true;
+        }
+        else {
+        return false;
+        }
+    }
+};
+
+void recursiveRemoveFromPQ(GameState* node, custom_priority_queue& open){
+    for(int i= 0; i<node->children.size(); i++)
+        recursiveRemoveFromPQ(node->children[i]);
+    open.remove(node);
+}
+
 Move MyBot::play( const OthelloBoard& board )
 {
     OthelloBoard originalBoard = board;
 
-    priority_queue<GameState*, vector<GameState*>, CompareDist> open;
+    custom_priority_queue<GameState*, vector<GameState*>, CompareDist> open;
     open.push(new GameState(originalBoard, turn, 0, 0, INT_MAX, NULL, 0));
 
     while(true){
@@ -172,7 +195,7 @@ Move MyBot::play( const OthelloBoard& board )
                     next->h = min(current->h, eval(currBoard, currTurn));
 
                     open.push(next);
-//                    current->children.push_back(next); Do we need this?
+                    // current->children.push_back(next); Do we need this?
                 }
                 else if(current->turn != turn){
                     OthelloBoard newBoard  = currBoard;
@@ -216,7 +239,7 @@ Move MyBot::play( const OthelloBoard& board )
                    next->h      = current->h;
 
                    open.push(next);
-//                   recursiveRemoveFromPQ(next, open);
+                   recursiveRemoveFromPQ(next, open);
                 }
                 else if(current->parent->children[current->parent->children.size()-1] == current){
                    GameState *next = current->parent;
