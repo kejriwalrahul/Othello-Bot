@@ -38,7 +38,7 @@ MyBot::MyBot( Turn turn )
 {
 }
 
-#define ply_depth 5
+#define ply_depth 3
 #define BOARD_SIZE 8
 
 // Returns the number of coins of color "color" at corners
@@ -145,7 +145,7 @@ class GameState{
 class CompareDist{
     public:
         bool operator()(GameState* n1, GameState* n2) {
-            return n1->h - n2->h;
+            return n2->h - n1->h;
         }
 };
 
@@ -172,6 +172,11 @@ void recursiveRemoveFromPQ(GameState* node, custom_priority_queue<GameState*, ve
     for(int i= 0; i<node->children.size(); i++)
         recursiveRemoveFromPQ(node->children[i], q);
     q.remove(node);
+}
+
+void recursiveRemoveChildrenFromPQ(GameState* node, custom_priority_queue<GameState*, vector<GameState*>, CompareDist> &q){
+    for(int i= 0; i<node->children.size(); i++)
+        recursiveRemoveFromPQ(node->children[i], q);
 }
 
 Move MyBot::play( const OthelloBoard& board )
@@ -201,7 +206,7 @@ Move MyBot::play( const OthelloBoard& board )
             OthelloBoard &currBoard = current->board;
             Turn &currTurn = current->turn;
 
-            if(current->status == 0){
+            if(current->status == LIVE){
                 list<Move> moves = current->board.getValidMoves(currTurn);
                 // Downward Pass
                 if(current->depth >= ply_depth || moves.size() == 0){
@@ -267,7 +272,7 @@ Move MyBot::play( const OthelloBoard& board )
                    }
 
                    open.push(next);
-                   recursiveRemoveFromPQ(next, open);
+                   recursiveRemoveChildrenFromPQ(next, open);
                 }
                 else if(current->parent->children[current->parent->children.size()-1] == current){
                    GameState *next = current->parent;
