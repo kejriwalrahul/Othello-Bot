@@ -12,6 +12,7 @@
 #include <climits>
 #include <queue>
 #include <vector>
+#include <algorithm>
 using namespace std;
 using namespace Desdemona;
 
@@ -143,11 +144,11 @@ class CompareDist{
 
 typedef GameState TreeNode;
 
-template<typename T>
-class custom_priority_queue : public priority_queue<T, vector<T>>
+template<typename T1, typename T2, typename T3>
+class custom_priority_queue : public priority_queue<T1, T2, T3>
 {
   public:
-    bool remove(const T& value) {
+    bool remove(const T1& value) {
         auto it = find(this->c.begin(), this->c.end(), value);
         if (it != this->c.end()) {
             this->c.erase(it);
@@ -160,10 +161,10 @@ class custom_priority_queue : public priority_queue<T, vector<T>>
     }
 };
 
-void recursiveRemoveFromPQ(GameState* node, custom_priority_queue& open){
+void recursiveRemoveFromPQ(GameState* node, custom_priority_queue<GameState*, vector<GameState*>, CompareDist> &q){
     for(int i= 0; i<node->children.size(); i++)
-        recursiveRemoveFromPQ(node->children[i]);
-    open.remove(node);
+        recursiveRemoveFromPQ(node->children[i], q);
+    q.remove(node);
 }
 
 Move MyBot::play( const OthelloBoard& board )
@@ -209,7 +210,7 @@ Move MyBot::play( const OthelloBoard& board )
                     // Fill up the children vector of the current min node, so that it can be accessed later
                     // (when a child is solved)
                     list<Move>::iterator it = currMoves.begin();
-                    it += 1;
+                    it++;
                     for(int cnt = 1; it != currMoves.end(); it++, cnt++) {
                         OthelloBoard newBoard = currBoard;
                         newBoard.makeMove(current->turn, *it);
