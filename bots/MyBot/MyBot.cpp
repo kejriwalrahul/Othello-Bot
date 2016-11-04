@@ -214,11 +214,11 @@ Move MyBot::play( const OthelloBoard& board )
                     // current->children.push_back(next); Do we need this?
                 }
                 else if(current->turn != turn){
-                    OthelloBoard newBoard  = currBoard;
-                    list<Move>   currMoves = newBoard.getValidMoves(currTurn);
-                    newBoard.makeMove(current->turn, *(currMoves.begin()));
+                    OthelloBoard *newBoard  = new OthelloBoard(currBoard);
+                    list<Move>   currMoves = newBoard->getValidMoves(currTurn);
+                    newBoard->makeMove(current->turn, *(currMoves.begin()));
 
-                    GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, 0);
+                    GameState *next = new GameState(*newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, 0);
                     open.push(next);
                     current->children.push_back(next);
 
@@ -227,10 +227,10 @@ Move MyBot::play( const OthelloBoard& board )
                     list<Move>::iterator it = currMoves.begin();
                     it++;
                     for(int cnt = 1; it != currMoves.end(); it++, cnt++) {
-                        OthelloBoard newBoard = currBoard;
-                        newBoard.makeMove(current->turn, *it);
+                        OthelloBoard *newBoard = new OthelloBoard(currBoard);
+                        newBoard->makeMove(current->turn, *it);
 
-                        GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt);
+                        GameState *next = new GameState(*newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt);
                         current->children.push_back(next);
                     }
                 }
@@ -238,10 +238,10 @@ Move MyBot::play( const OthelloBoard& board )
                     list<Move> currMoves = currBoard.getValidMoves(currTurn);
                     list<Move>::iterator it = currMoves.begin();
                     for(int cnt = 0; it != currMoves.end(); it++, cnt++){
-                        OthelloBoard newBoard = currBoard;
-                        newBoard.makeMove(current->turn, *it);
+                        OthelloBoard *newBoard = new OthelloBoard(currBoard);
+                        newBoard->makeMove(current->turn, *it);
 
-                        GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt);
+                        GameState *next = new GameState(*newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt);
                         open.push(next);
                         current->children.push_back(next);
                     }
