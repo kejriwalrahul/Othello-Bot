@@ -70,7 +70,6 @@ bool border(int x, int y) {
 
 int eval(const OthelloBoard board, Coin mxCol){
     // turn is the color of the MAX player
-    float val = 0;
     float cp, mob, cc, stb; // coin parity, mobility, corners captured, stability
     cp=mob=cc=stb=0;
     int maxCoins, minCoins;
@@ -107,7 +106,7 @@ int eval(const OthelloBoard board, Coin mxCol){
         cc = 0;
     }
 
-    return (int) (10*p + 801.724*cc + 78.922*mob);
+    return (int) (10*cp + 801.724*cc + 78.922*mob);
 }
 
 int min(int a, int b){
@@ -187,7 +186,13 @@ Move MyBot::play( const OthelloBoard& board )
         open.pop();
 
         if(current->depth == 0 && current->status == SOLVED) {
-            // retrieve best move
+            // retrieve best move: returned in (4.)
+            // if this is reached, root should have been a terminal node
+            // Return a random move, just for safety.
+            list<Move> moves = current->board.getValidMoves(turn);
+            if(!moves.size() == 0) {
+                return *moves.begin();
+            }
             // return best move
             break;
         } else {
@@ -196,8 +201,9 @@ Move MyBot::play( const OthelloBoard& board )
             Turn &currTurn = current->turn;
 
             if(current->status == 0){
+                list<Move> moves = current->board.getValidMoves(currTurn);
                 // Downward Pass
-                if(current->depth >= ply_depth){
+                if(current->depth >= ply_depth || moves.size() == 0){
                     GameState *next = current;
                     next->status = SOLVED;
 //                    next->h = min(current->h, eval(currBoard, currTurn));
@@ -218,7 +224,7 @@ Move MyBot::play( const OthelloBoard& board )
                     // Fill up the children vector of the current min node, so that it can be accessed later
                     // (when a child is solved)
                     list<Move>::iterator it = currMoves.begin();
-                    it += 1;
+                    it++;
                     for(int cnt = 1; it != currMoves.end(); it++, cnt++) {
                         OthelloBoard newBoard = currBoard;
                         newBoard.makeMove(current->turn, *it);
@@ -246,6 +252,18 @@ Move MyBot::play( const OthelloBoard& board )
                    GameState *next = current->parent;
                    next->status = SOLVED;
                    next->h      = current->h;
+
+
+                   if(current->depth == 1) { // Is a child node of root
+                        OthelloBoard &parentBoard = current->parent->board;
+                        list<Move> moves = parentBoard.getValidMoves(turn);
+                        list<Move>::iterator it = moves.begin();
+                        for(int i=0; it != moves.end(); it++, i++) {
+                            if(i == current->parentsChildIndex) {
+                                return *it;
+                            }
+                        }
+                   }
 
                    open.push(next);
                    recursiveRemoveFromPQ(next, open);
