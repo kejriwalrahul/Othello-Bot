@@ -55,20 +55,6 @@ int corners(const OthelloBoard &board, Coin color) {
     return ans;
 }
 
-bool border(int x, int y) {
-    if(y==0 || y==BOARD_SIZE-1) {
-        if(x>1 && x<BOARD_SIZE-1-1) {
-            return true;
-        }
-    }
-    if(x==0 || x==BOARD_SIZE-1) {
-        if(y>1 && y<BOARD_SIZE-1-1) {
-            return true;
-        }
-    }
-    return false;
-}
-
 int eval(const OthelloBoard board, Coin mxCol){
     // mxCol is the color of the MAX player
     float cp, mob, cc, stb; // coin parity, mobility, corners captured, stability
@@ -124,64 +110,18 @@ class GameState{
     public:
         OthelloBoard &board;
         Turn turn;
-        int depth;
-        int status;
-        int h;
-        GameState* parent;
-        int parentsChildIndex;
         vector<GameState*> children;
 
-    GameState(OthelloBoard &pboard, Turn pturn, int pdepth, int pstatus, int ph, GameState *pparent, int index): board(pboard)
+    GameState(OthelloBoard &pboard, Turn pturn): board(pboard)
     {
         turn   = pturn;
-        depth  = pdepth;
-        status = pstatus;
-        h      = ph;
-        parent = pparent;
-        parentsChildIndex = index;
     }
 };
-
-class CompareDist{
-    public:
-        bool operator()(GameState* n1, GameState* n2) {
-            return n1->h - n2->h;
-        }
-};
-
-typedef GameState TreeNode;
-
-template<typename T1, typename T2, typename T3>
-class custom_priority_queue : public priority_queue<T1, T2, T3>
-{
-  public:
-    bool remove(const T1& value) {
-        typename T2::iterator it = find(this->c.begin(), this->c.end(), value);
-        if (it != this->c.end()) {
-            this->c.erase(it);
-            make_heap(this->c.begin(), this->c.end(), this->comp);
-            return true;
-        }
-        else {
-        return false;
-        }
-    }
-};
-
-void recursiveRemoveFromPQ(GameState* node, custom_priority_queue<GameState*, vector<GameState*>, CompareDist> &q){
-    for(int i= 0; i<node->children.size(); i++)
-        recursiveRemoveFromPQ(node->children[i], q);
-    q.remove(node);
-}
 
 Move MyBot::play( const OthelloBoard& board )
 {
-    OthelloBoard originalBoard = board;
-
-    custom_priority_queue<GameState*, vector<GameState*>, CompareDist> open;
-    open.push(new GameState(originalBoard, turn, 0, 0, INT_MAX, NULL, 0));
-
-    while(true){
+    OthelloBoard root = board;
+    list<Move> moves = root
 
         GameState *current = open.top();
         open.pop();
@@ -320,5 +260,6 @@ extern "C" {
         delete bot;
     }
 }
+
 
 
