@@ -83,13 +83,11 @@ int eval(const OthelloBoard board, Turn turn){
     float val = 0;
     list<Move> moves= board.getValidMoves(turn);
     list<Move>::iterator it = moves.begin();
-    Move *move;
     for(; it != moves.end(); it++) {
-        move = &(*it);
-        if(corner((*move).x,(*move).y)) {
+        if(corner((*it).x,(*it).y)) {
             val += 2;
         }
-        if(border((*move).x, (*move).y)) {
+        if(border((*it).x, (*it).y)) {
             val += .1;
         }
     }
@@ -169,7 +167,8 @@ Move MyBot::play( const OthelloBoard& board )
                 if(current->depth >= ply_depth){
                     GameState *next = current;
                     next->status = SOLVED;
-                    next->h = min(current->h, eval(currBoard, currTurn));
+//                    next->h = min(current->h, eval(currBoard, currTurn));
+                    next->h = min(current->h, eval(currBoard, turn)); // evaluate current board position wrt MAX
 
                     open.push(next);
 //                    current->children.push_back(next); Do we need this?
