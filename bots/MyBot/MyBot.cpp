@@ -172,7 +172,7 @@ Move MyBot::play( const OthelloBoard& board )
                     next->h = min(current->h, eval(currBoard, currTurn));
 
                     open.push(next);
-                    current->children.push_back(next);
+//                    current->children.push_back(next); Do we need this?
                 }
                 else if(current->turn != turn){
                     OthelloBoard newBoard  = currBoard;
@@ -182,6 +182,18 @@ Move MyBot::play( const OthelloBoard& board )
                     GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, 0);
                     open.push(next);
                     current->children.push_back(next);
+
+                    // Fill up the children vector of the current min node, so that it can be accessed later
+                    // (when a child is solved)
+                    list<Move>::iterator it = currMoves.begin();
+                    it += 1;
+                    for(int cnt = 1; it != currMoves.end(); it++, cnt++) {
+                        OthelloBoard newBoard = currBoard;
+                        newBoard.makeMove(current->turn, *it);
+
+                        GameState *next = new GameState(newBoard, other(currTurn), current->depth+1, LIVE, current->h, current, cnt);
+                        current->children.push_back(next);
+                    }
                 }
                 else{
                     list<Move> currMoves = currBoard.getValidMoves(currTurn);
@@ -206,7 +218,7 @@ Move MyBot::play( const OthelloBoard& board )
                    open.push(next);
 //                   recursiveRemoveFromPQ(next, open);
                 }
-                else if(current->parent->children[current->parent->children.size()] == current){
+                else if(current->parent->children[current->parent->children.size()-1] == current){
                    GameState *next = current->parent;
                    next->status = SOLVED;
                    next->h      = current->h;
