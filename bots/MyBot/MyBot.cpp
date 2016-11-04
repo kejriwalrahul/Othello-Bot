@@ -41,29 +41,18 @@ MyBot::MyBot( Turn turn )
 #define ply_depth 5
 #define BOARD_SIZE 8
 
-int eval(OthelloBoard board, Move m, Turn turn) {
-    board.makeMove(turn, m);
-    if(turn == RED)
-        return board.getRedCount() - board.getBlackCount();
-    else
-        return board.getBlackCount() - board.getRedCount();
-}
+// Returns the number of coins of color "color" at corners
+int corners(const OthelloBoard &board, Coin color) {
+    int ans = 0;
+    int x[4] = {0, 0, BOARD_SIZE-1, BOARD_SIZE-1};
+    int y[4] = {0, BOARD_SIZE-1, BOARD_SIZE-1, 0};
 
-bool corner(int x, int y) {
-    if(x == 0 && y == 0) {
-        return true;
+    for(int i=0; i<4; i++) {
+        if(board.get(x[i], y[i]) == color) {
+            ans += 1;
+        }
     }
-    if(x == 0 && y == BOARD_SIZE-1) {
-        return true;
-    }
-    if(x == BOARD_SIZE-1 && y == 0) {
-        return true;
-    }
-    if(x == BOARD_SIZE-1 && y == BOARD_SIZE-1) {
-        return true;
-    }
-
-    return false;
+    return ans;
 }
 
 bool border(int x, int y) {
@@ -80,27 +69,46 @@ bool border(int x, int y) {
     return false;
 }
 
-int eval(const OthelloBoard board, Turn turn){
+int eval(const OthelloBoard board, Coin mxCol){
+    // turn is the color of the MAX player
     float val = 0;
-    list<Move> moves= board.getValidMoves(turn);
-    list<Move>::iterator it = moves.begin();
-    Move *move;
-    for(; it != moves.end(); it++) {
-        move = &(*it);
-        if(corner((*move).x,(*move).y)) {
-            val += 2;
-        }
-        if(border((*move).x, (*move).y)) {
-            val += .1;
-        }
+    float cp, mob, cc, stb; // coin parity, mobility, corners captured, stability
+    cp=mob=cc=stb=0;
+    int maxCoins, minCoins;
+    int maxMoves, minMoves;
+    int maxCorners, minCorners;
+    Coin mnCol  = other(mxCol);
+
+    maxMoves = board.getValidMoves(mxCol).size();
+    minMoves = board.getValidMoves(mnCol).size();
+
+    maxCorners = corners(board, mxCol);
+    minCorners = corners(board, mnCol);
+
+    if(mxCol == RED) {
+        maxCoins = board.getRedCount();
+        minCoins = board.getBlackCount();
+
+    } else {
+        maxCoins = board.getBlackCount();
+        minCoins = board.getRedCount();
     }
 
-    if(turn == RED)
-        val += board.getRedCount() - board.getBlackCount();
-    else
-        val += board.getBlackCount() - board.getRedCount();
+    cp = 100.0*(maxCoins-minCoins)/(maxCoins+minCoins+0.0);
 
-    return (int) val;
+    if(maxMoves + minMoves != 0) {
+        mob = 100.0*(maxMoves-minMoves)/(maxMoves+minMoves+0.0);
+    } else {
+        mob = 0;
+    }
+
+    if(maxCorners+minCorners != 0) {
+        cc = 100.0*(maxCorners-minCorners)/(maxCorners+minCorners+0.0);
+    } else {
+        cc = 0;
+    }
+
+    return (int) (10*p + 801.724*cc + 78.922*mob);
 }
 
 int min(int a, int b){
@@ -193,7 +201,8 @@ Move MyBot::play( const OthelloBoard& board )
                 if(current->depth >= ply_depth){
                     GameState *next = current;
                     next->status = SOLVED;
-                    next->h = min(current->h, eval(currBoard, currTurn));
+//                    next->h = min(current->h, eval(currBoard, currTurn));
+                    next->h = min(current->h, eval(currBoard, turn)); // evaluate current board position wrt MAX
 
                     open.push(next);
                     // current->children.push_back(next); Do we need this?
