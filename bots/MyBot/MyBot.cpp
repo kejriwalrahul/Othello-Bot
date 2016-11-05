@@ -38,7 +38,7 @@ MyBot::MyBot( Turn turn )
 {
 }
 
-#define ply_depth 3
+#define ply_depth 4
 #define BOARD_SIZE 8
 
 // Returns the number of coins of color "color" at corners
@@ -156,7 +156,7 @@ class custom_priority_queue : public priority_queue<T1, T2, T3>
 {
   public:
     bool remove(const T1& value) {
-        auto it = find(this->c.begin(), this->c.end(), value);
+        typename T2::iterator it = find(this->c.begin(), this->c.end(), value);
         if (it != this->c.end()) {
             this->c.erase(it);
             make_heap(this->c.begin(), this->c.end(), this->comp);
