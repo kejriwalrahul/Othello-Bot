@@ -38,7 +38,7 @@ MyBot::MyBot( Turn turn )
 {
 }
 
-#define ply_depth 6
+#define ply_depth 7
 #define BOARD_SIZE 8
 
 // Returns the number of coins of color "color" at corners
@@ -56,19 +56,24 @@ int corners(const OthelloBoard &board, Coin color) {
 }
 
 double cornerAdjAnalyze(const OthelloBoard& board, Coin mxCol){
-    int x[] = {0, 0, 1, 1, 1, 1,  BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-1, BOARD_SIZE-1 };
-    int y[] = {1, BOARD_SIZE-2, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1, 1, BOARD_SIZE-2};
+    int x[] = {0,            0, 1, 1,            1,            1,  BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-1, BOARD_SIZE-1 };
+    int y[] = {1, BOARD_SIZE-2, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1,             0,            1, BOARD_SIZE-2, BOARD_SIZE-1,            1, BOARD_SIZE-2 };
 
     double score = 0.0;
+    int    total = 0;
     for(int i=0; i < 12; i++){
         Coin token = board.get(x[i], y[i]);
-        if(token == mxCol)
+        if(token == mxCol){
             score -= 1.0;
-        else if(token == other(mxCol))
+            total++;
+        }
+        else if(token == other(mxCol)){
             score += 1.0;
+            total++;
+        }
     }
 
-    return score/12;
+    return score/total;
 }
 
 double getNeighborScore(int x, int y, const OthelloBoard& board, Coin mxCol){
@@ -129,16 +134,16 @@ double eval(const OthelloBoard board, Coin mxCol){
     }
 
     // Penalize corner adj pos to prevent handing out corners
-    double cornerAdjScore = cornerAdjAnalyze(board, mxCol);
+    double cornerAdjScore = 100*cornerAdjAnalyze(board, mxCol);
 
     // Give Away heuristic
-    double K1 = 10.0, K2;
     double count_goodness;
     bool early_game = (maxCoins + minCoins < 40);
     if(early_game){
         // give-away in the early game
-        count_goodness = K1*(minCoins - maxCoins);
-        cp = count_goodness;
+        // count_goodness = 10*(minCoins - maxCoins);
+        // cp = count_goodness;
+        cp = -cp;
     }
 
     // Position valuation and frontiers/ stability
@@ -179,7 +184,7 @@ double eval(const OthelloBoard board, Coin mxCol){
 
     // board.print();
     // printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
-    return (200*cp + 801.724*cc + 78.922*mob + 400*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
+    return (200*cp + 801.724*cc + 78.922*mob + 200*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
 }
 
 int min(int a, int b){
@@ -268,7 +273,7 @@ Move MyBot::play( const OthelloBoard& board )
         }
     }
 
-    cout << "Best Beta = " << bBet << endl;
+    cout << "Best Move:(x,y)= (" << bMov.x <<", "<< bMov.y << ")" << endl;
 
     return bMov;
 }
