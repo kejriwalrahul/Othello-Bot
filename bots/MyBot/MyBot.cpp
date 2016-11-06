@@ -71,6 +71,25 @@ double cornerAdjAnalyze(const OthelloBoard& board, Coin mxCol){
     return score/12;
 }
 
+double getNeighborScore(int x, int y, const OthelloBoard& board, Coin mxCol){
+    int nx[] = {-1, -1, 0, 1, 1, 1, 0, -1};
+    int ny[] = {0, 1, 1, 1, 0, -1, -1, -1};
+
+    int cx, cy;
+    for(int i=0; i<8; i++){
+        cx = x + nx[i]; 
+        cy = y + ny[i];
+        if(cx >= 0 && cy >= 0 && cx < 8 && cy < 8){
+            Coin currToken = board.get(cx, cy);
+            if(currToken == mxCol)
+                return 1.0;
+            else if(currToken == other(mxCol))
+                return -1.0;
+        }
+    }
+    return 0;
+}
+
 double eval(const OthelloBoard board, Coin mxCol){
     // mxCol is the color of the MAX player
     double cp, mob, cc, stb; // coin parity, mobility, corners captured, stability
@@ -109,23 +128,58 @@ double eval(const OthelloBoard board, Coin mxCol){
         cc = 0;
     }
 
+    // Penalize corner adj pos to prevent handing out corners
     double cornerAdjScore = cornerAdjAnalyze(board, mxCol);
 
+    // Give Away heuristic
     double K1 = 10.0, K2;
     double count_goodness;
     bool early_game = (maxCoins + minCoins < 40);
-    if( early_game ){
+    if(early_game){
         // give-away in the early game
         count_goodness = K1*(minCoins - maxCoins);
         cp = count_goodness;
-    }else{
-        // take-back later in the game
-        // count_goodness := K2*(maxCoins - minCoins)
     }
 
-//    board.print();
-//    printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
-    return (200*cp + 801.724*cc + 78.922*mob + 400*cornerAdjScore);
+    // Position valuation and frontiers/ stability
+    int V[8][8] = {
+        { 20, -3, 11,  8,  8, 11, -3, 20},
+        { -3, -7, -4,  1,  1, -4, -7, -3},
+        { 11, -4,  2,  2,  2,  2, -4, 11},
+        {  8,  1,  2, -3, -3,  2,  1,  8},
+        {  8,  1,  2, -3, -3,  2,  1,  8},
+        { 11, -4,  2,  2,  2,  2, -4, 11},
+        { -3, -7, -4,  1,  1, -4, -7, -3},
+        { 20, -3, 11,  8,  8, 11, -3, 20}
+    };
+
+    // possible to optimize and remove getBlackCoins() and getRedCoins()
+    double positional_valuation = 0.0;
+    double frontier_valuation = 0.0;
+    int    total_frontier = 0;
+
+    for(int i = 0; i< BOARD_SIZE; i++)
+        for(int j = 0; j<BOARD_SIZE; j++){
+            Coin curr = board.get(i,j);
+            if(curr == EMPTY)   continue;
+            
+            // Positional score 
+            int multiplier = (board.get(i,j) == mxCol)? 1.0:-1.0;
+            positional_valuation += multiplier * V[i][j];
+            
+            // Frontier/ stability
+            double score = getNeighborScore(i, j, board, mxCol);
+            if(score != 0){
+                frontier_valuation += score;
+                total_frontier++;
+            }
+        }
+
+    frontier_valuation = -100.0*(frontier_valuation / total_frontier);
+
+    // board.print();
+    // printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
+    return (200*cp + 801.724*cc + 78.922*mob + 400*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
 }
 
 int min(int a, int b){
