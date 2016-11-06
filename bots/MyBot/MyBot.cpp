@@ -184,7 +184,7 @@ double eval(const OthelloBoard board, Coin mxCol){
 
     // board.print();
     // printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
-    return (200*cp + 801.724*cc + 78.922*mob + 200*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
+    return (200*cp + 801.724*cc + 78.922*mob + 600*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
 }
 
 int min(int a, int b){
@@ -263,7 +263,7 @@ Move MyBot::play( const OthelloBoard& board )
     GameState *root = new GameState(rootBoard, turn);
     double rooth = alphaBeta(*root, ply_depth, (double) INT_MIN, (double) INT_MAX, true);
 
-    Move bMov (0, 0);
+    Move bMov = root->children[0].second;
     double bBet = (double) INT_MIN;
     for(int i=0; i<root->children.size(); i++) {
         double ch = root->children[i].first->h;
