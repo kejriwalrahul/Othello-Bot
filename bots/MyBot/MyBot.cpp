@@ -93,6 +93,18 @@ double eval(const OthelloBoard board, Coin mxCol){
         cc = 0;
     }
 
+    double K1 = 10.0, K2;
+    double count_goodness;
+    bool early_game = (maxCoins + minCoins < 40);
+    if( early_game ){
+        // give-away in the early game
+        count_goodness = K1*(minCoins - maxCoins);
+        cp = count_goodness;
+    }else{
+        // take-back later in the game
+        // count_goodness := K2*(maxCoins - minCoins)
+    }
+
 //    board.print();
 //    printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
     return (200*cp + 801.724*cc + 78.922*mob);
