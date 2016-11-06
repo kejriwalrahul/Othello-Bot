@@ -55,6 +55,22 @@ int corners(const OthelloBoard &board, Coin color) {
     return ans;
 }
 
+double cornerAdjAnalyze(const OthelloBoard& board, Coin mxCol){
+    int x[] = {0, 0, 1, 1, 1, 1,  BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-1, BOARD_SIZE-1 };
+    int y[] = {1, BOARD_SIZE-2, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1, 1, BOARD_SIZE-2};
+
+    double score = 0.0;
+    for(int i=0; i < 12; i++){
+        Coin token = board.get(x[i], y[i]);
+        if(token == mxCol)
+            score -= 1.0;
+        else if(token == other(mxCol))
+            score += 1.0;
+    }
+
+    return score/12;
+}
+
 double eval(const OthelloBoard board, Coin mxCol){
     // mxCol is the color of the MAX player
     double cp, mob, cc, stb; // coin parity, mobility, corners captured, stability
@@ -93,6 +109,8 @@ double eval(const OthelloBoard board, Coin mxCol){
         cc = 0;
     }
 
+    double cornerAdjScore = cornerAdjAnalyze(board, mxCol);
+
     double K1 = 10.0, K2;
     double count_goodness;
     bool early_game = (maxCoins + minCoins < 40);
@@ -107,7 +125,7 @@ double eval(const OthelloBoard board, Coin mxCol){
 
 //    board.print();
 //    printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
-    return (200*cp + 801.724*cc + 78.922*mob);
+    return (200*cp + 801.724*cc + 78.922*mob + 400*cornerAdjScore);
 }
 
 int min(int a, int b){
