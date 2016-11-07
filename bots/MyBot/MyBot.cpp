@@ -55,6 +55,16 @@ int corners(const OthelloBoard &board, Coin color) {
     return ans;
 }
 
+bool isCorner(Move m){
+    int x[4] = {0, 0, BOARD_SIZE-1, BOARD_SIZE-1};
+    int y[4] = {0, BOARD_SIZE-1, BOARD_SIZE-1, 0};
+
+    for(int i=0; i<4; i++) {
+        if(m.x == x[i] &&  m.y == y[i]) return true;
+    }
+    return false;
+}
+
 double cornerAdjAnalyze(const OthelloBoard& board, Coin mxCol){
     int x[] = {0,            0, 1, 1,            1,            1,  BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-1, BOARD_SIZE-1 };
     int y[] = {1, BOARD_SIZE-2, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1,             0,            1, BOARD_SIZE-2, BOARD_SIZE-1,            1, BOARD_SIZE-2 };
@@ -184,7 +194,7 @@ double eval(const OthelloBoard board, Coin mxCol){
 
     // board.print();
     // printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
-    return (200*cp + 801.724*cc + 78.922*mob + 600*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
+    return (200*cp + 801.724*cc + 78.922*mob + 1000*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
 }
 
 int min(int a, int b){
@@ -271,6 +281,8 @@ Move MyBot::play( const OthelloBoard& board )
             bBet = ch;
             bMov = root->children[i].second;
         }
+        if(isCorner(root->children[i].second))
+            return root->children[i].second;
     }
 
     cout << "Best Move:(x,y)= (" << bMov.x <<", "<< bMov.y << ")" << endl;
