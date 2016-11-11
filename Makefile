@@ -18,7 +18,7 @@ LDFLAGS += -ldl -lpthread -lrt -pthread
 OTHELLO_LIB_OBJS=obj/Othello.o obj/OthelloBoard.o obj/LoggedOthelloGame.o obj/OthelloGame.o obj/OthelloPlayer.o obj/botLoader.o
 OBJS=obj/main.o $(OTHELLO_LIB_OBJS)
 
-all: $(TARGETS) bots
+all: $(TARGETS)
 
 bin/Desdemona: ${OBJS}
 	if [ ! -e lib ]; then mkdir lib; fi;
@@ -33,10 +33,6 @@ lib/libOthello.so: $(OTHELLO_LIB_OBJS)
 ${OBJS}: obj/%.o : src/%.cpp 
 	if [ ! -e obj ]; then mkdir obj; fi;
 	$(CC) $(CFLAGS) -c $^ -o $@
-
-bots:
-	echo Looking into subdir $@ 
-	cd $@; make
 
 src-dist: 
 	rm -rf Desdemona-src-$(VERSION)
