@@ -14,7 +14,7 @@ OBJS = $(BOT).o
 all: $(OUT)
 
 $(OUT): $(BOT).o $(ROOTDIR)lib/libOthello.so
-	$(CC) $(LDFLAGS) -shared $^ -o $@
+	$(CC) $(LDFLAGS) -O3 -shared $^ -o $@
 
 ${OBJS}: %.o : %.cpp 
 	$(CC) $(CFLAGS) -c $^ -o $@

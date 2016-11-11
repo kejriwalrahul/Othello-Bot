@@ -41,7 +41,7 @@ MyBot::MyBot( Turn turn )
     nmov = 0;
 }
 
-#define ply_depth 7
+#define ply_depth 5
 #define BOARD_SIZE 8
 
 // Returns the number of coins of color "color" at corners
@@ -69,8 +69,8 @@ bool isCorner(Move m){
 }
 
 double cornerAdjAnalyze(const OthelloBoard& board, Coin mxCol){
-    int x[] = {0, 0, 1, 1, 1, 1, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-1, BOARD_SIZE-1 };
-    int y[] = {1, BOARD_SIZE-2, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1, 1, BOARD_SIZE-2 };
+    int x[] = {0,           0,  1, 1,            1,            1, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-2, BOARD_SIZE-1, BOARD_SIZE-1 };
+    int y[] = {1, BOARD_SIZE-2, 0, 1, BOARD_SIZE-2, BOARD_SIZE-1,            0,            1, BOARD_SIZE-2, BOARD_SIZE-1, 1, BOARD_SIZE-2 };
 
     double score = 0.0;
     int    total = 0;
@@ -198,7 +198,9 @@ double eval(const OthelloBoard board, Coin mxCol){
 
     // board.print();
     // printf("cp=%f cc=%f mob=%f\n", cp, cc, mob);
-    return (200*cp + 801.724*cc + 78.922*mob + 1000*cornerAdjScore + 75*frontier_valuation + 10*positional_valuation);
+    return (200*cp + 801.724*cc + 78.922*mob + 1000*cornerAdjScore + 75*frontier_valuation + 30*positional_valuation);
+//    return cc;
+//    return (200*cp + 801.724*cc + 78.922*mob + 1000*cornerAdjScore);
 //    return positional_valuation;
 //    cout << "mxCol: " << mxCol << endl;
 //    board.print();
@@ -236,10 +238,10 @@ bool getChildren(GameState &node)
     list<Move>::iterator it = moves.begin();
     for(; it != moves.end(); it++) {
         Move mov = *it;
-        OthelloBoard childBoard = node.board;
-        childBoard.makeMove(node.turn, mov);
+        OthelloBoard *childBoard = new OthelloBoard(node.board);
+        childBoard->makeMove(node.turn, mov);
 
-        GameState *child = new GameState(childBoard, other(node.turn));
+        GameState *child = new GameState(*childBoard, other(node.turn));
         node.children.push_back(pair<GameState*, Move>(child, mov));
     }
 
@@ -247,8 +249,10 @@ bool getChildren(GameState &node)
 }
 
 double alphaBeta(GameState &node, int depth, double alp, double bet, bool maximizingPlayer) {
-    cout << "Height: " << ply_depth-depth << endl;
-    node.board.print();
+//    cout << "Alpha=" << alp << " Beta=" << bet << endl;
+//    cout << "Height: " << ply_depth-depth << endl;
+//    cout << "Max? " << maximizingPlayer << endl;
+//    node.board.print();
 
     if(depth == 0 || !getChildren(node)) {
         node.h = eval(node.board, maximizingPlayer ? node.turn : other(node.turn));
@@ -293,8 +297,8 @@ Move MyBot::play( const OthelloBoard& board )
             bBet = ch;
             bMov = root->children[i].second;
         }
-        if(isCorner(root->children[i].second))
-            return root->children[i].second;
+//        if(isCorner(root->children[i].second))
+//            return root->children[i].second;
     }
 
 //    cout << "Best Move:(x,y)= (" << bMov.x <<", "<< bMov.y << ")" << endl;
