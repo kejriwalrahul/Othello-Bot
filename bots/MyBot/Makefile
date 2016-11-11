@@ -15,6 +15,8 @@ all: $(OUT)
 
 $(OUT): $(BOT).o $(ROOTDIR)lib/libOthello.so
 	$(CC) $(LDFLAGS) -shared $^ -o $@
+	cp bot.so $(ROOTDIR)10.so
+	mv bot.so 10.so
 
 ${OBJS}: %.o : %.cpp 
 	$(CC) $(CFLAGS) -c $^ -o $@

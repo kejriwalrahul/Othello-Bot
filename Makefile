@@ -18,7 +18,7 @@ LDFLAGS += -ldl -lpthread -lrt -pthread
 OTHELLO_LIB_OBJS=obj/Othello.o obj/OthelloBoard.o obj/LoggedOthelloGame.o obj/OthelloGame.o obj/OthelloPlayer.o obj/botLoader.o
 OBJS=obj/main.o $(OTHELLO_LIB_OBJS)
 
-all: $(TARGETS)
+all: $(TARGETS) bots
 
 bin/Desdemona: ${OBJS}
 	if [ ! -e lib ]; then mkdir lib; fi;
@@ -27,6 +27,7 @@ bin/Desdemona: ${OBJS}
 lib/libOthello.so: $(OTHELLO_LIB_OBJS)
 	if [ ! -e lib ]; then mkdir lib; fi;
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,$@.1 -o $@ $^ -lc -lrt
+
 
 # Pattern to build obj files from src files
 ${OBJS}: obj/%.o : src/%.cpp 
